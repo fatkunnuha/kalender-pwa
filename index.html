@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2563eb">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+  <title>Kalender Jawa & Nasional</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen p-4">
+
+<div class="max-w-6xl mx-auto bg-white rounded-xl shadow p-6 space-y-6">
+
+  <h1 class="text-2xl font-bold text-center">Kalender Jawa & Nasional</h1>
+
+  <!-- NAVIGASI -->
+  <div class="flex justify-between items-center">
+    <button onclick="prevMonth()" class="px-3 py-1 bg-gray-200 rounded">◀</button>
+    <div id="bulanTahun" class="font-semibold text-lg"></div>
+    <button onclick="nextMonth()" class="px-3 py-1 bg-gray-200 rounded">▶</button>
+  </div>
+
+  <!-- LEGEND LABEL -->
+  <div>
+    <h2 class="font-semibold text-sm mb-2">Keterangan Label</h2>
+    <div id="legendLabel" class="flex flex-wrap gap-2 text-xs"></div>
+  </div>
+
+  <!-- HARI -->
+  <div class="grid grid-cols-7 text-center font-semibold text-sm">
+    <div>Minggu</div><div>Senin</div><div>Selasa</div>
+    <div>Rabu</div><div>Kamis</div><div>Jumat</div><div>Sabtu</div>
+  </div>
+
+  <!-- KALENDER -->
+  <div id="kalender" class="grid grid-cols-7 gap-2 text-sm"></div>
+
+</div>
+
+<!-- MODAL -->
+<div id="modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+  <div class="bg-white rounded-xl p-5 w-full max-w-md space-y-3">
+    <h2 id="modalTitle" class="font-semibold text-lg">Tambah Agenda</h2>
+
+    <input id="agendaId" type="hidden">
+    <input id="agendaTanggal" type="date" class="w-full border rounded p-2">
+    <input id="agendaJudul" type="text" placeholder="Judul agenda" class="w-full border rounded p-2">
+    <input id="agendaWaktu" type="time" class="w-full border rounded p-2">
+
+    <div class="flex gap-2">
+      <input id="agendaLabel" type="text" placeholder="Label"
+        class="flex-1 border rounded p-2">
+      <input id="agendaWarna" type="color" value="#3b82f6"
+        class="w-16 h-10">
+    </div>
+
+    <div class="flex gap-2 pt-2">
+      <button onclick="simpanAgenda()"
+        class="flex-1 bg-blue-600 text-white py-2 rounded">
+        Simpan
+      </button>
+      <button onclick="tutupModal()"
+        class="flex-1 bg-gray-300 py-2 rounded">
+        Batal
+      </button>
+    </div>
+
+    <button id="hapusBtn"
+      onclick="hapusAgenda()"
+      class="w-full bg-red-600 text-white py-2 rounded hidden">
+      Hapus Agenda
+    </button>
+  </div>
+</div>
+
+<script>
+/* ===== KALENDER JAWA ===== */
+const pasaran = ["Legi","Pahing","Pon","Wage","Kliwon"];
+const refDate = new Date("1970-01-01");
+const getPasaran = d =>
+  pasaran[(Math.floor((d - refDate) / 86400000) % 5 + 5) % 5];
+
+/* ===== STORAGE ===== */
+let agendas = JSON.parse(localStorage.getItem("agendas")) || [];
+const saveStorage = () =>
+  localStorage.setItem("agendas", JSON.stringify(agendas));
+
+/* ===== KALENDER ===== */
+let currentDate = new Date();
+
+function renderCalendar() {
+  kalender.innerHTML = "";
+  renderLegend();
+
+  const y = currentDate.getFullYear();
+  const m = currentDate.getMonth();
+
+  bulanTahun.innerText =
+    currentDate.toLocaleDateString("id-ID",{month:"long",year:"numeric"});
+
+  const firstDay = new Date(y, m, 1).getDay();
+  const days = new Date(y, m + 1, 0).getDate();
+
+  for (let i = 0; i < firstDay; i++) kalender.appendChild(document.createElement("div"));
+
+  for (let d = 1; d <= days; d++) {
+    const dateStr = `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    const box = document.createElement("div");
+    box.className = "border rounded-lg p-2 min-h-[110px] space-y-1 cursor-pointer";
+
+    box.innerHTML = `
+      <div class="font-semibold">${d}</div>
+      <div class="text-xs text-gray-600">${getPasaran(new Date(dateStr))}</div>
+    `;
+
+    agendas.filter(a => a.tanggal === dateStr).forEach(a => {
+      const item = document.createElement("div");
+      item.className = "text-xs p-1 rounded";
+      item.style.backgroundColor = a.warna;
+      item.style.color = "#fff";
+      item.innerText = `${a.waktu} ${a.judul}`;
+      item.onclick = e => {
+        e.stopPropagation();
+        bukaModalEdit(a.id);
+      };
+      box.appendChild(item);
+    });
+
+    box.onclick = () => bukaModalTambah(dateStr);
+    kalender.appendChild(box);
+  }
+}
+
+function prevMonth(){ currentDate.setMonth(currentDate.getMonth()-1); renderCalendar(); }
+function nextMonth(){ currentDate.setMonth(currentDate.getMonth()+1); renderCalendar(); }
+
+/* ===== LEGEND LABEL ===== */
+function renderLegend() {
+  legendLabel.innerHTML = "";
+  const uniqueLabels = {};
+
+  agendas.forEach(a => {
+    if (a.label) uniqueLabels[a.label] = a.warna;
+  });
+
+  if (Object.keys(uniqueLabels).length === 0) {
+    legendLabel.innerHTML =
+      `<span class="text-gray-500">Belum ada label</span>`;
+    return;
+  }
+
+  Object.entries(uniqueLabels).forEach(([label, warna]) => {
+    const item = document.createElement("div");
+    item.className = "flex items-center gap-1 border rounded px-2 py-1";
+    item.innerHTML = `
+      <span class="w-3 h-3 rounded inline-block"
+        style="background:${warna}"></span>
+      <span>${label}</span>
+    `;
+    legendLabel.appendChild(item);
+  });
+}
+
+/* ===== MODAL ===== */
+function bukaModalTambah(tanggal){
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+  modalTitle.innerText = "Tambah Agenda";
+  hapusBtn.classList.add("hidden");
+  agendaId.value = "";
+  agendaTanggal.value = tanggal;
+  agendaJudul.value = "";
+  agendaWaktu.value = "";
+  agendaLabel.value = "";
+  agendaWarna.value = "#3b82f6";
+}
+
+function bukaModalEdit(id){
+  const a = agendas.find(x => x.id === id);
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+  modalTitle.innerText = "Edit Agenda";
+  hapusBtn.classList.remove("hidden");
+  agendaId.value = a.id;
+  agendaTanggal.value = a.tanggal;
+  agendaJudul.value = a.judul;
+  agendaWaktu.value = a.waktu;
+  agendaLabel.value = a.label;
+  agendaWarna.value = a.warna;
+}
+
+function tutupModal(){
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+}
+
+/* ===== CRUD ===== */
+function simpanAgenda(){
+  const data = {
+    id: agendaId.value || Date.now().toString(),
+    tanggal: agendaTanggal.value,
+    judul: agendaJudul.value,
+    waktu: agendaWaktu.value,
+    label: agendaLabel.value,
+    warna: agendaWarna.value
+  };
+
+  if (!data.tanggal || !data.judul || !data.waktu) {
+    alert("Lengkapi agenda");
+    return;
+  }
+
+  agendas = agendaId.value
+    ? agendas.map(a => a.id === data.id ? data : a)
+    : [...agendas, data];
+
+  saveStorage();
+  tutupModal();
+  renderCalendar();
+}
+
+function hapusAgenda(){
+  if (!confirm("Hapus agenda?")) return;
+  agendas = agendas.filter(a => a.id !== agendaId.value);
+  saveStorage();
+  tutupModal();
+  renderCalendar();
+}
+
+/* INIT */
+renderCalendar();
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js");
+}
+</script>
+
+</body>
+</html>
