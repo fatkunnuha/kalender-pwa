@@ -147,8 +147,17 @@ function renderCalendar() {
   for (let d=1; d<=days; d++) {
     const dateStr = `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
     const cell = document.createElement("div");
-    cell.className = "bg-white p-1 text-xs flex flex-col gap-1 cursor-pointer";
+    
+const today = new Date();
+const isToday =
+  today.getFullYear() === y &&
+  today.getMonth() === m &&
+  today.getDate() === d;
 
+cell.className = `
+  p-1 text-xs flex flex-col gap-1 cursor-pointer
+  ${isToday ? "bg-gray-200" : "bg-white"}
+`;
     cell.innerHTML = `
       <div class="font-semibold">${d}</div>
       <div class="text-[10px] text-gray-500">${getPasaran(new Date(dateStr))}</div>
@@ -224,3 +233,4 @@ if ("serviceWorker" in navigator) {
 
 </body>
 </html>
+
