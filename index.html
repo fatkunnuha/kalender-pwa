@@ -1,237 +1,569 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
+<!doctype html>
+<html lang="id" class="h-full">
+ <head>
   <meta charset="UTF-8">
-  <title>Kalender Jawa & Nasional</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#2563eb">
+   
 
   <!-- PWA -->
   <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#2563eb">
 <link rel="apple-touch-icon" href="icon-192.png">
-
+   
+  <title>Kalender Jawa Indonesia</title>
   <script src="https://cdn.tailwindcss.com"></script>
-
+  <script src="/_sdk/element_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&amp;family=Plus+Jakarta+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
   <style>
-    html, body {
-      height: 100%;
+    body {
+      box-sizing: border-box;
+    }
+    .font-display { font-family: 'Playfair Display', serif; }
+    .font-body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    
+    .calendar-day {
+      transition: all 0.2s ease;
+    }
+    .calendar-day:hover {
+      transform: scale(1.05);
+    }
+    
+    .event-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+    
+    .modal-backdrop {
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+    }
+    
+    .slide-up {
+      animation: slideUp 0.3s ease;
+    }
+    
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .pasaran-badge {
+      font-size: 0.6rem;
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+    
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #c7d2fe;
+      border-radius: 3px;
     }
   </style>
-</head>
-
-<body class="h-screen w-screen overflow-hidden bg-gray-100">
-
-<!-- WRAPPER FULLSCREEN -->
-<div class="h-full w-full flex flex-col">
-
-  <!-- HEADER -->
-  <header class="flex items-center justify-between px-4 py-3 bg-white shadow shrink-0">
-    <button onclick="prevMonth()" class="px-3 py-1 bg-gray-200 rounded">◀</button>
-
-    <div class="text-center">
-      <div class="text-lg font-bold" id="bulanTahun"></div>
-      <div class="text-xs text-gray-500">Kalender Jawa & Nasional</div>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full font-body">
+  <div id="app" class="h-full w-full overflow-auto bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50"><!-- Header -->
+   <header class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 py-3 md:py-4">
+     <h1 id="app-title" class="font-display text-xl md:text-2xl lg:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 text-center">Kalender Jawa Indonesia</h1>
     </div>
-
-    <button onclick="nextMonth()" class="px-3 py-1 bg-gray-200 rounded">▶</button>
-  </header>
-
-  <!-- LEGEND -->
-  <section class="px-4 py-2 bg-white border-b shrink-0">
-    <div class="flex flex-wrap gap-2 text-xs" id="legendLabel"></div>
-  </section>
-
-  <!-- HEADER HARI -->
-  <section class="grid grid-cols-7 text-center text-sm font-semibold bg-gray-200 shrink-0">
-    <div>Minggu</div><div>Senin</div><div>Selasa</div>
-    <div>Rabu</div><div>Kamis</div><div>Jumat</div><div>Sabtu</div>
-  </section>
-
-  <!-- GRID KALENDER (SCROLLABLE) -->
-  <main id="kalender"
-    class="flex-1 grid grid-cols-7 gap-px bg-gray-300 overflow-auto">
-  </main>
-
-</div>
-
-<!-- MODAL -->
-<div id="modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
-  <div class="bg-white rounded-xl p-5 w-full max-w-md space-y-3">
-    <h2 id="modalTitle" class="font-semibold text-lg">Tambah Agenda</h2>
-
-    <input id="agendaId" type="hidden">
-    <input id="agendaTanggal" type="date" class="w-full border rounded p-2">
-    <input id="agendaJudul" type="text" placeholder="Judul agenda" class="w-full border rounded p-2">
-    <input id="agendaWaktu" type="time" class="w-full border rounded p-2">
-
-    <div class="flex gap-2">
-      <input id="agendaLabel" type="text" placeholder="Label"
-        class="flex-1 border rounded p-2">
-      <input id="agendaWarna" type="color" value="#2563eb" class="w-16 h-10">
+   </header><!-- Main Content -->
+   <main class="max-w-6xl mx-auto px-3 md:px-4 py-4 md:py-6"><!-- Navigation -->
+    <div class="flex items-center justify-between mb-4 md:mb-6 bg-white rounded-2xl p-3 md:p-4 shadow-lg"><button onclick="changeMonth(-1)" class="p-2 md:p-3 rounded-xl bg-indigo-100 hover:bg-indigo-200 text-indigo-600 transition-colors">
+      <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+      </svg></button>
+     <div class="text-center">
+      <h2 id="month-year" class="font-display text-lg md:text-xl lg:text-2xl font-bold text-gray-800"></h2>
+      <p id="java-month-year" class="text-xs md:text-sm text-purple-600 font-medium mt-1"></p>
+     </div><button onclick="changeMonth(1)" class="p-2 md:p-3 rounded-xl bg-indigo-100 hover:bg-indigo-200 text-indigo-600 transition-colors">
+      <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+      </svg></button>
+    </div><!-- Today Button -->
+    <div class="flex justify-center mb-4"><button onclick="goToToday()" class="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-sm font-medium rounded-full hover:shadow-lg transition-all"> 📅 Hari Ini </button>
+    </div><!-- Legend -->
+    <div class="flex flex-wrap justify-center gap-2 md:gap-4 mb-4 md:mb-6 text-xs md:text-sm">
+     <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-red-500"></span> <span class="text-gray-600">Penting</span>
+     </div>
+     <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-amber-500"></span> <span class="text-gray-600">Kerja</span>
+     </div>
+     <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> <span class="text-gray-600">Pribadi</span>
+     </div>
+     <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-blue-500"></span> <span class="text-gray-600">Lainnya</span>
+     </div>
+    </div><!-- Calendar Grid -->
+    <div class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6"><!-- Day Headers -->
+     <div class="grid grid-cols-7 bg-gradient-to-r from-indigo-500 to-purple-500 text-white">
+      <div class="py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-red-200">
+       Min
+      </div>
+      <div class="py-2 md:py-3 text-center text-xs md:text-sm font-semibold">
+       Sen
+      </div>
+      <div class="py-2 md:py-3 text-center text-xs md:text-sm font-semibold">
+       Sel
+      </div>
+      <div class="py-2 md:py-3 text-center text-xs md:text-sm font-semibold">
+       Rab
+      </div>
+      <div class="py-2 md:py-3 text-center text-xs md:text-sm font-semibold">
+       Kam
+      </div>
+      <div class="py-2 md:py-3 text-center text-xs md:text-sm font-semibold">
+       Jum
+      </div>
+      <div class="py-2 md:py-3 text-center text-xs md:text-sm font-semibold">
+       Sab
+      </div>
+     </div><!-- Calendar Days -->
+     <div id="calendar-grid" class="grid grid-cols-7 gap-px bg-gray-100"><!-- Days will be generated here -->
+     </div>
+    </div><!-- Upcoming Events -->
+    <div class="bg-white rounded-2xl shadow-lg p-4 md:p-6">
+     <h3 class="font-display text-lg md:text-xl font-bold text-gray-800 mb-4 flex items-center gap-2"><span>📋</span> Agenda Mendatang</h3>
+     <div id="upcoming-events" class="space-y-3"><!-- Events will be listed here -->
+     </div>
     </div>
-
-    <div class="flex gap-2 pt-2">
-      <button onclick="simpanAgenda()" class="flex-1 bg-blue-600 text-white py-2 rounded">
-        Simpan
-      </button>
-      <button onclick="tutupModal()" class="flex-1 bg-gray-300 py-2 rounded">
-        Batal
-      </button>
+   </main><!-- Add Event Modal -->
+   <div id="event-modal" class="fixed inset-0 z-50 hidden">
+    <div class="modal-backdrop absolute inset-0" onclick="closeModal()"></div>
+    <div class="absolute inset-x-4 bottom-0 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-md">
+     <div class="bg-white rounded-t-3xl md:rounded-2xl shadow-2xl slide-up max-h-[85%] overflow-y-auto">
+      <div class="sticky top-0 bg-white p-4 md:p-6 border-b border-gray-100 rounded-t-3xl md:rounded-t-2xl">
+       <div class="flex items-center justify-between">
+        <h3 id="modal-title" class="font-display text-xl font-bold text-gray-800">Tambah Agenda</h3><button onclick="closeModal()" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+         <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+         </svg></button>
+       </div>
+       <p id="modal-date-info" class="text-sm text-purple-600 mt-1"></p>
+      </div>
+      <div class="p-4 md:p-6 space-y-4">
+       <div><label for="event-title" class="block text-sm font-medium text-gray-700 mb-1">Judul Agenda</label> <input type="text" id="event-title" placeholder="Masukkan judul agenda..." class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all">
+       </div>
+       <div><label for="event-desc" class="block text-sm font-medium text-gray-700 mb-1">Catatan</label> <textarea id="event-desc" rows="3" placeholder="Tambahkan catatan..." class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all resize-none"></textarea>
+       </div>
+       <div><label class="block text-sm font-medium text-gray-700 mb-2">Kategori Warna</label>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3"><button type="button" onclick="selectColor('red')" class="color-btn flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-all ring-offset-2" data-color="red"> <span class="w-10 h-10 rounded-full bg-red-500"></span> <span class="text-xs font-medium text-gray-700">Penting</span> </button> <button type="button" onclick="selectColor('amber')" class="color-btn flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-all ring-offset-2" data-color="amber"> <span class="w-10 h-10 rounded-full bg-amber-500"></span> <span class="text-xs font-medium text-gray-700">Kerja</span> </button> <button type="button" onclick="selectColor('emerald')" class="color-btn flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-all ring-offset-2" data-color="emerald"> <span class="w-10 h-10 rounded-full bg-emerald-500"></span> <span class="text-xs font-medium text-gray-700">Pribadi</span> </button> <button type="button" onclick="selectColor('blue')" class="color-btn flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-all ring-offset-2" data-color="blue"> <span class="w-10 h-10 rounded-full bg-blue-500"></span> <span class="text-xs font-medium text-gray-700">Lainnya</span> </button>
+        </div>
+       </div>
+      </div>
+      <div class="p-4 md:p-6 border-t border-gray-100 flex gap-3"><button onclick="closeModal()" class="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 font-medium hover:bg-gray-50 transition-colors"> Batal </button> <button onclick="saveEvent()" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-medium hover:shadow-lg transition-all"> Simpan </button>
+      </div><!-- Event List for Selected Date -->
+      <div id="date-events" class="px-4 md:px-6 pb-4 md:pb-6"><!-- Existing events for selected date -->
+      </div>
+     </div>
     </div>
-
-    <button id="hapusBtn"
-      onclick="hapusAgenda()"
-      class="w-full bg-red-600 text-white py-2 rounded hidden">
-      Hapus Agenda
-    </button>
+   </div><!-- Toast Notification -->
+   <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg hidden z-50 transition-all"><span id="toast-message"></span>
+   </div>
   </div>
-</div>
-
-<script>
-/* ===== PWA ===== */
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("sw.js");
-}
-
-/* ===== KALENDER JAWA ===== */
-const pasaran =  ["wage", "kliwon", "legi", "pahing", "pon"];
-const refDate = new Date("1970-01-01");
-const getPasaran = d =>
-  pasaran[(Math.floor((d - refDate) / 86400000) % 5 + 5) % 5];
-
-/* ===== STORAGE ===== */
-let agendas = JSON.parse(localStorage.getItem("agendas")) || [];
-const saveStorage = () =>
-  localStorage.setItem("agendas", JSON.stringify(agendas));
-
-/* ===== STATE ===== */
-let currentDate = new Date();
-
-/* ===== RENDER ===== */
-function renderLegend() {
-  legendLabel.innerHTML = "";
-  const map = {};
-  agendas.forEach(a => a.label && (map[a.label] = a.warna));
-
-  if (!Object.keys(map).length) {
-    legendLabel.innerHTML = `<span class="text-gray-500">Tidak ada label</span>`;
-    return;
-  }
-
-  Object.entries(map).forEach(([l,w]) => {
-    legendLabel.innerHTML += `
-      <span class="flex items-center gap-1 border px-2 py-1 rounded">
-        <span class="w-3 h-3 rounded" style="background:${w}"></span>${l}
-      </span>`;
-  });
-}
-
-function renderCalendar() {
-  kalender.innerHTML = "";
-  renderLegend();
-
-  const y = currentDate.getFullYear();
-  const m = currentDate.getMonth();
-
-  bulanTahun.innerText =
-    currentDate.toLocaleDateString("id-ID",{month:"long",year:"numeric"});
-
-  const first = new Date(y,m,1).getDay();
-  const days = new Date(y,m+1,0).getDate();
-
-  for (let i=0;i<first;i++) {
-    kalender.appendChild(document.createElement("div"));
-  }
-
-  for (let d=1; d<=days; d++) {
-    const dateStr = `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
-    const cell = document.createElement("div");
+  <script>
+    // Default Configuration
+    const defaultConfig = {
+      app_title: 'Kalender Jawa Indonesia'
+    };
     
-const today = new Date();
-const isToday =
-  today.getFullYear() === y &&
-  today.getMonth() === m &&
-  today.getDate() === d;
+    let config = { ...defaultConfig };
 
-cell.className = `
-  p-1 text-xs flex flex-col gap-1 cursor-pointer
-  ${isToday ? "bg-gray-200" : "bg-white"}
-`;
-    cell.innerHTML = `
-      <div class="font-semibold">${d}</div>
-      <div class="text-[10px] text-gray-500">${getPasaran(new Date(dateStr))}</div>
-    `;
+    // Initialize Element SDK
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange: async (newConfig) => {
+          config = { ...defaultConfig, ...newConfig };
+          document.getElementById('app-title').textContent = config.app_title || defaultConfig.app_title;
+        },
+        mapToCapabilities: (cfg) => ({
+          recolorables: [],
+          borderables: [],
+          fontEditable: undefined,
+          fontSizeable: undefined
+        }),
+        mapToEditPanelValues: (cfg) => new Map([
+          ['app_title', cfg.app_title || defaultConfig.app_title]
+        ])
+      });
+    }
 
-    agendas.filter(a=>a.tanggal===dateStr).forEach(a=>{
-      const ev=document.createElement("div");
-      ev.className="rounded px-1 truncate";
-      ev.style.background=a.warna;
-      ev.style.color="#fff";
-      ev.innerText=`${a.waktu} ${a.judul}`;
-      ev.onclick=e=>{
-        e.stopPropagation();
-        bukaModalEdit(a.id);
+    // State
+    let currentDate = new Date();
+    let selectedDate = null;
+    let selectedColor = 'blue';
+    let events = JSON.parse(localStorage.getItem('kalenderJawaEvents')) || [];
+
+    // Javanese Calendar Data
+    const pasaranNames = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
+    const javaMonthNames = ['Sura', 'Sapar', 'Mulud', 'Bakda Mulud', 'Jumadil Awal', 'Jumadil Akhir', 'Rejeb', 'Ruwah', 'Pasa', 'Sawal', 'Sela', 'Besar'];
+    const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    const winduNames = ['Alip', 'Ehe', 'Jimawal', 'Je', 'Dal', 'Be', 'Wawu', 'Jimakir'];
+
+    // National Holidays (simplified)
+    const nationalHolidays = {
+      '1-1': 'Tahun Baru',
+      '17-8': 'Hari Kemerdekaan',
+      '25-12': 'Hari Natal',
+      '1-5': 'Hari Buruh',
+      '1-6': 'Hari Lahir Pancasila',
+      '10-11': 'Hari Pahlawan',
+      '22-12': 'Hari Ibu',
+      '2-5': 'Hari Pendidikan Nasional',
+      '21-4': 'Hari Kartini'
+    };
+
+    // Reference date: 29 Januari 2026 = Kamis Legi = 10 Ruwah 1959 (Ja Dal)
+    const referenceDate = new Date(2026, 0, 29); // 29 Januari 2026
+    const referencePasaran = 0; // Legi (index 0)
+    const referenceJavaDate = 10; // Tanggal Jawa
+    const referenceJavaMonth = 7; // Ruwah (index 7)
+    const referenceJavaYear = 1959; // Tahun Jawa
+    
+    // Calculate Pasaran (Javanese 5-day cycle)
+    function getPasaran(date) {
+      const diffDays = Math.floor((date - referenceDate) / (1000 * 60 * 60 * 24));
+      const pasaranIndex = (referencePasaran + diffDays) % 5;
+      return pasaranNames[pasaranIndex >= 0 ? pasaranIndex : pasaranIndex + 5];
+    }
+
+    // Calculate Javanese Date
+    function getJavaneseDate(date) {
+      const diffDays = Math.floor((date - referenceDate) / (1000 * 60 * 60 * 24));
+      
+      let javaDate = referenceJavaDate + diffDays;
+      let javaMonth = referenceJavaMonth;
+      let javaYear = referenceJavaYear;
+      
+      // Days in each Javanese month (alternating 30 and 29)
+      const daysInMonth = [30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 29];
+      
+      while (javaDate > daysInMonth[javaMonth]) {
+        javaDate -= daysInMonth[javaMonth];
+        javaMonth++;
+        
+        if (javaMonth > 11) {
+          javaMonth = 0;
+          javaYear++;
+        }
+      }
+      
+      while (javaDate < 1) {
+        javaMonth--;
+        
+        if (javaMonth < 0) {
+          javaMonth = 11;
+          javaYear--;
+        }
+        
+        javaDate += daysInMonth[javaMonth];
+      }
+      
+      return { date: javaDate, month: javaMonth, year: javaYear };
+    }
+
+    // Get Javanese month name
+    function getJavaMonth(date) {
+      const javaDate = getJavaneseDate(date);
+      return javaMonthNames[javaDate.month];
+    }
+
+    // Get Javanese year
+    function getJavaYear(date) {
+      const javaDate = getJavaneseDate(date);
+      return javaDate.year;
+    }
+    
+    // Get Windu name
+    function getWindu(date) {
+      const javaDate = getJavaneseDate(date);
+      const winduIndex = (javaDate.year - 1) % 8;
+      return winduNames[winduIndex];
+    }
+    
+    // Get full Javanese date string
+    function getFullJavaDate(date) {
+      const javaDate = getJavaneseDate(date);
+      const windu = getWindu(date);
+      return `${javaDate.date} ${javaMonthNames[javaDate.month]} ${javaDate.year} (${windu})`;
+    }
+
+    // Render Calendar
+    function renderCalendar() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      
+      // Update header
+      document.getElementById('month-year').textContent = `${monthNames[month]} ${year}`;
+      const javaFullDate = getFullJavaDate(currentDate);
+      document.getElementById('java-month-year').textContent = javaFullDate;
+      
+      const grid = document.getElementById('calendar-grid');
+      grid.innerHTML = '';
+      
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const today = new Date();
+      
+      // Empty cells for days before first of month
+      for (let i = 0; i < firstDay; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'bg-gray-50 min-h-[70px] md:min-h-[90px]';
+        grid.appendChild(emptyCell);
+      }
+      
+      // Days of the month
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day);
+        const dateKey = `${year}-${month + 1}-${day}`;
+        const holidayKey = `${day}-${month + 1}`;
+        const pasaran = getPasaran(date);
+        const dayOfWeek = date.getDay();
+        const isToday = today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
+        const isSunday = dayOfWeek === 0;
+        const isHoliday = nationalHolidays[holidayKey];
+        const dayEvents = events.filter(e => e.date === dateKey);
+        
+        const cell = document.createElement('div');
+        cell.className = `calendar-day bg-white p-1 md:p-2 min-h-[70px] md:min-h-[90px] cursor-pointer hover:bg-indigo-50 transition-colors relative ${isToday ? 'ring-2 ring-indigo-500 ring-inset' : ''}`;
+        cell.onclick = () => openModal(dateKey, date);
+        
+        let html = `
+          <div class="flex flex-col h-full">
+            <div class="flex items-start justify-between">
+              <span class="text-sm md:text-base font-semibold ${isSunday || isHoliday ? 'text-red-500' : 'text-gray-800'} ${isToday ? 'bg-indigo-500 text-white w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center text-xs md:text-sm' : ''}">
+                ${day}
+              </span>
+              <span class="pasaran-badge bg-purple-100 text-purple-700 hidden md:inline">${pasaran}</span>
+            </div>
+            <span class="text-[10px] text-purple-500 md:hidden">${pasaran}</span>
+        `;
+        
+        if (isHoliday) {
+          html += `<span class="text-[9px] md:text-[10px] text-red-500 truncate mt-1">${isHoliday}</span>`;
+        }
+        
+        if (dayEvents.length > 0) {
+          html += `<div class="flex gap-1 mt-auto pt-1 flex-wrap">`;
+          dayEvents.slice(0, 3).forEach(event => {
+            html += `<span class="event-dot bg-${event.color}-500"></span>`;
+          });
+          if (dayEvents.length > 3) {
+            html += `<span class="text-[9px] text-gray-400">+${dayEvents.length - 3}</span>`;
+          }
+          html += `</div>`;
+        }
+        
+        html += `</div>`;
+        cell.innerHTML = html;
+        grid.appendChild(cell);
+      }
+      
+      renderUpcomingEvents();
+    }
+
+    // Render Upcoming Events
+    function renderUpcomingEvents() {
+      const container = document.getElementById('upcoming-events');
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const upcoming = events
+        .map(event => {
+          const [year, month, day] = event.date.split('-').map(Number);
+          return { ...event, dateObj: new Date(year, month - 1, day) };
+        })
+        .filter(event => event.dateObj >= today)
+        .sort((a, b) => a.dateObj - b.dateObj)
+        .slice(0, 5);
+      
+      if (upcoming.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-8 text-gray-400">
+            <p class="text-4xl mb-2">📭</p>
+            <p>Belum ada agenda mendatang</p>
+          </div>
+        `;
+        return;
+      }
+      
+      container.innerHTML = upcoming.map(event => {
+        const [year, month, day] = event.date.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
+        const pasaran = getPasaran(date);
+        const dayName = dayNames[date.getDay()];
+        
+        return `
+          <div class="flex items-start gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
+            <div class="w-3 h-3 rounded-full bg-${event.color}-500 mt-1.5 flex-shrink-0"></div>
+            <div class="flex-1 min-w-0">
+              <h4 class="font-semibold text-gray-800 truncate">${event.title}</h4>
+              <p class="text-xs text-gray-500">${dayName} ${pasaran}, ${day} ${monthNames[month - 1]} ${year}</p>
+              ${event.description ? `<p class="text-sm text-gray-600 mt-1 line-clamp-2">${event.description}</p>` : ''}
+            </div>
+            <button onclick="deleteEvent('${event.id}')" class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Modal Functions
+    function openModal(dateKey, date) {
+      selectedDate = dateKey;
+      const modal = document.getElementById('event-modal');
+      const pasaran = getPasaran(date);
+      const dayName = dayNames[date.getDay()];
+      const [year, month, day] = dateKey.split('-').map(Number);
+      const javaDate = getJavaneseDate(date);
+      const windu = getWindu(date);
+      
+      document.getElementById('modal-date-info').textContent = `${dayName} ${pasaran}, ${day} ${monthNames[month - 1]} ${year} | ${javaDate.date} ${javaMonthNames[javaDate.month]} ${javaDate.year} (${windu})`;
+      document.getElementById('event-title').value = '';
+      document.getElementById('event-desc').value = '';
+      selectColor('blue');
+      
+      renderDateEvents(dateKey);
+      modal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+      document.getElementById('event-modal').classList.add('hidden');
+      document.body.style.overflow = '';
+      selectedDate = null;
+    }
+
+    function renderDateEvents(dateKey) {
+      const container = document.getElementById('date-events');
+      const dateEvents = events.filter(e => e.date === dateKey);
+      
+      if (dateEvents.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+      
+      container.innerHTML = `
+        <div class="border-t border-gray-100 pt-4">
+          <h4 class="text-sm font-semibold text-gray-700 mb-3">Agenda pada tanggal ini:</h4>
+          <div class="space-y-2">
+            ${dateEvents.map(event => `
+              <div class="flex items-center gap-3 p-3 rounded-xl bg-gray-50">
+                <div class="w-3 h-3 rounded-full bg-${event.color}-500 flex-shrink-0"></div>
+                <div class="flex-1 min-w-0">
+                  <p class="font-medium text-gray-800 truncate">${event.title}</p>
+                  ${event.description ? `<p class="text-xs text-gray-500 truncate">${event.description}</p>` : ''}
+                </div>
+                <button onclick="deleteEvent('${event.id}')" class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function selectColor(color) {
+      selectedColor = color;
+      document.querySelectorAll('.color-btn').forEach(btn => {
+        btn.classList.remove('ring-2', 'ring-indigo-500', 'bg-indigo-50');
+        if (btn.dataset.color === color) {
+          btn.classList.add('ring-2', 'ring-indigo-500', 'bg-indigo-50');
+        }
+      });
+    }
+
+    function saveEvent() {
+      const title = document.getElementById('event-title').value.trim();
+      
+      if (!title) {
+        showToast('Mohon isi judul agenda');
+        return;
+      }
+      
+      if (events.length >= 999) {
+        showToast('Batas maksimal 999 agenda tercapai');
+        return;
+      }
+      
+      const newEvent = {
+        id: Date.now().toString(),
+        date: selectedDate,
+        title: title,
+        description: document.getElementById('event-desc').value.trim(),
+        color: selectedColor,
+        createdAt: new Date().toISOString()
       };
-      cell.appendChild(ev);
-    });
+      
+      events.push(newEvent);
+      localStorage.setItem('kalenderJawaEvents', JSON.stringify(events));
+      
+      showToast('Agenda berhasil disimpan! ✨');
+      closeModal();
+      renderCalendar();
+    }
 
-    cell.onclick=()=>bukaModalTambah(dateStr);
-    kalender.appendChild(cell);
-  }
-}
+    function deleteEvent(id) {
+      events = events.filter(e => e.id !== id);
+      localStorage.setItem('kalenderJawaEvents', JSON.stringify(events));
+      
+      showToast('Agenda dihapus');
+      
+      if (selectedDate) {
+        renderDateEvents(selectedDate);
+      }
+      renderCalendar();
+    }
 
-function prevMonth(){ currentDate.setMonth(currentDate.getMonth()-1); renderCalendar(); }
-function nextMonth(){ currentDate.setMonth(currentDate.getMonth()+1); renderCalendar(); }
+    function changeMonth(delta) {
+      currentDate.setMonth(currentDate.getMonth() + delta);
+      renderCalendar();
+    }
 
-/* ===== MODAL ===== */
-function bukaModalTambah(t){
-  modal.classList.remove("hidden"); modal.classList.add("flex");
-  modalTitle.innerText="Tambah Agenda"; hapusBtn.classList.add("hidden");
-  agendaId.value=""; agendaTanggal.value=t;
-  agendaJudul.value=""; agendaWaktu.value="";
-  agendaLabel.value=""; agendaWarna.value="#2563eb";
-}
-function bukaModalEdit(id){
-  const a=agendas.find(x=>x.id===id);
-  modal.classList.remove("hidden"); modal.classList.add("flex");
-  modalTitle.innerText="Edit Agenda"; hapusBtn.classList.remove("hidden");
-  agendaId.value=a.id; agendaTanggal.value=a.tanggal;
-  agendaJudul.value=a.judul; agendaWaktu.value=a.waktu;
-  agendaLabel.value=a.label; agendaWarna.value=a.warna;
-}
-function tutupModal(){ modal.classList.add("hidden"); modal.classList.remove("flex"); }
+    function goToToday() {
+      currentDate = new Date();
+      renderCalendar();
+      showToast('Kembali ke hari ini 📅');
+    }
 
-/* ===== CRUD ===== */
-function simpanAgenda(){
-  const data={
-    id:agendaId.value||Date.now().toString(),
-    tanggal:agendaTanggal.value,
-    judul:agendaJudul.value,
-    waktu:agendaWaktu.value,
-    label:agendaLabel.value,
-    warna:agendaWarna.value
-  };
-  if(!data.tanggal||!data.judul||!data.waktu){alert("Lengkapi agenda");return;}
-  agendas=agendaId.value?agendas.map(a=>a.id===data.id?data:a):[...agendas,data];
-  saveStorage(); tutupModal(); renderCalendar();
-}
-function hapusAgenda(){
-  if(!confirm("Hapus agenda?"))return;
-  agendas=agendas.filter(a=>a.id!==agendaId.value);
-  saveStorage(); tutupModal(); renderCalendar();
-}
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-message').textContent = message;
+      toast.classList.remove('hidden');
+      
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 2500);
+    }
 
-/* INIT */
-renderCalendar();
-</script>
+    // Initialize
+    renderCalendar();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9c56f259b793ce8b',t:'MTc2OTY3MTAxMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+
 <script>
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js");
 }
 </script>
 
-</body>
+
+
 </html>
-
-
