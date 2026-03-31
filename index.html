@@ -227,66 +227,6 @@
         </div>
     </div>
 
-    <script>
-        // Simulasi Data API (Karena API asli membutuhkan Key/Scrapping)
-        const fetchFuelPrices = () => {
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    resolve([
-                        { name: "Pertamax", price: 12950, class: "pertamax" },
-                        { name: "Pertamax Turbo", price: 14400, class: "pertamax-turbo" },
-                        { name: "Dexlite", price: 14550, class: "dexlite" },
-                        { name: "Pertamina Dex", price: 15100, class: "pertamax-turbo" },
-                        { name: "Pertalite", price: 10000, class: "pertamax" }
-                    ]);
-                }, 1000); // Simulasi delay jaringan
-            });
-        };
-
-        const formatRupiah = (number) => {
-            return new Intl.NumberFormat('id-ID', {
-                style: 'currency',
-                currency: 'IDR',
-                minimumFractionDigits: 0
-            }).format(number);
-        };
-
-        async function updateDashboard() {
-            const container = document.getElementById('price-container');
-            const timeDisplay = document.getElementById('last-update');
-
-            try {
-                const data = await fetchFuelPrices();
-                
-                // Bersihkan kontainer
-                container.innerHTML = '';
-
-                data.forEach(item => {
-                    const card = document.createElement('div');
-                    card.className = `card ${item.class}`;
-                    card.innerHTML = `
-                        <h3>${item.name}</h3>
-                        <div class="price">${formatRupiah(item.price)}<span>/Liter</span></div>
-                        <div class="status">Harga Tetap</div>
-                    `;
-                    container.appendChild(card);
-                });
-
-                // Update waktu
-                const now = new Date();
-                timeDisplay.innerText = now.toLocaleTimeString('id-ID') + ' WIB';
-
-            } catch (error) {
-                container.innerHTML = `<p style="color:red">Gagal memuat data harga.</p>`;
-            }
-        }
-
-        // Jalankan saat load
-        updateDashboard();
-
-        // Refresh otomatis setiap 1 jam (simulasi real-time)
-        setInterval(updateDashboard, 3600000);
-    </script>
    <main class="max-w-6xl mx-auto px-3 md:px-4 py-4 md:py-6"><!-- Navigation -->
     <div class="flex items-center justify-between mb-4 md:mb-6 bg-white rounded-2xl p-3 md:p-4 shadow-lg"><button onclick="changeMonth(-1)" class="p-2 md:p-3 rounded-xl bg-indigo-100 hover:bg-indigo-200 text-indigo-600 transition-colors">
       <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -375,6 +315,67 @@
    <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-lg hidden z-50 transition-all"><span id="toast-message"></span>
    </div>
   </div>
+  
+    <script>
+        // Simulasi Data API (Karena API asli membutuhkan Key/Scrapping)
+        const fetchFuelPrices = () => {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    resolve([
+                        { name: "Pertamax", price: 12950, class: "pertamax" },
+                        { name: "Pertamax Turbo", price: 14400, class: "pertamax-turbo" },
+                        { name: "Dexlite", price: 14550, class: "dexlite" },
+                        { name: "Pertamina Dex", price: 15100, class: "pertamax-turbo" },
+                        { name: "Pertalite", price: 10000, class: "pertamax" }
+                    ]);
+                }, 1000); // Simulasi delay jaringan
+            });
+        };
+
+        const formatRupiah = (number) => {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0
+            }).format(number);
+        };
+
+        async function updateDashboard() {
+            const container = document.getElementById('price-container');
+            const timeDisplay = document.getElementById('last-update');
+
+            try {
+                const data = await fetchFuelPrices();
+                
+                // Bersihkan kontainer
+                container.innerHTML = '';
+
+                data.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = `card ${item.class}`;
+                    card.innerHTML = `
+                        <h3>${item.name}</h3>
+                        <div class="price">${formatRupiah(item.price)}<span>/Liter</span></div>
+                        <div class="status">Harga Tetap</div>
+                    `;
+                    container.appendChild(card);
+                });
+
+                // Update waktu
+                const now = new Date();
+                timeDisplay.innerText = now.toLocaleTimeString('id-ID') + ' WIB';
+
+            } catch (error) {
+                container.innerHTML = `<p style="color:red">Gagal memuat data harga.</p>`;
+            }
+        }
+
+        // Jalankan saat load
+        updateDashboard();
+
+        // Refresh otomatis setiap 1 jam (simulasi real-time)
+        setInterval(updateDashboard, 3600000);
+    </script>
   <script>
     // Default Configuration
     const defaultConfig = {
